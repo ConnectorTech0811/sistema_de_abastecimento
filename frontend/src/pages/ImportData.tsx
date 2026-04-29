@@ -1,7 +1,7 @@
 import { UploadCloud, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useState, useRef } from 'react';
 
-export const ImportData = () => {
+export const ImportData = ({ custodyId, isModal = false }: { custodyId?: string, isModal?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
@@ -23,6 +23,9 @@ export const ImportData = () => {
 
     const formData = new FormData();
     formData.append('file', file);
+    if (custodyId) {
+      formData.append('custodyId', custodyId);
+    }
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/import', true);
@@ -30,7 +33,6 @@ export const ImportData = () => {
     
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
-        // We cap upload progress slightly below 100 so it dwells at 99% while the backend processes DB inserts
         const percentComplete = Math.min(Math.round((event.loaded / event.total) * 100), 99);
         setProgress(percentComplete);
       }
@@ -67,13 +69,15 @@ export const ImportData = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Importação de Dados</h1>
-        <p className="text-slate-500 mt-1 font-medium">Faça o upload do Excel contendo os dados brutos de ATMs e transações.</p>
-      </div>
+    <div className={`space-y-6 w-full mx-auto ${isModal ? '' : 'max-w-3xl'}`}>
+      {!isModal && (
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Importação de Dados</h1>
+          <p className="text-slate-500 mt-1 font-medium">Faça o upload do Excel contendo os dados brutos de ATMs e transações.</p>
+        </div>
+      )}
 
-      <div className="bg-white p-10 flex flex-col items-center justify-center min-h-[400px] border-2 border-dashed border-primary-300 rounded-2xl shadow-sm hover:border-primary-500 transition-colors bg-primary-50/30">
+      <div className={`bg-white ${isModal ? 'p-6' : 'p-10'} flex flex-col items-center justify-center ${isModal ? 'min-h-[300px]' : 'min-h-[400px]'} border-2 border-dashed border-primary-300 rounded-2xl shadow-sm hover:border-primary-500 transition-colors bg-primary-50/30`}>
         {loading ? (
           <div className="flex flex-col items-center w-full max-w-md">
             <Loader2 className="w-16 h-16 text-primary-600 animate-spin mb-6" />
@@ -86,16 +90,15 @@ export const ImportData = () => {
                 <div className="w-full h-full bg-white/20 animate-pulse"></div>
               </div>
             </div>
-            <p className="text-slate-400 text-xs mt-3 font-medium text-center">Transferindo para o banco de dados, por favor aguarde.</p>
           </div>
         ) : (
           <>
-            <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center mb-6 shadow-inner border border-primary-200">
-              <UploadCloud className="w-12 h-12 text-primary-600" />
+            <div className={`${isModal ? 'w-16 h-16 mb-4' : 'w-24 h-24 mb-6'} rounded-full bg-primary-100 flex items-center justify-center shadow-inner border border-primary-200`}>
+              <UploadCloud className={`${isModal ? 'w-8 h-8' : 'w-12 h-12'} text-primary-600`} />
             </div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Arraste e solte o arquivo ou clique no botão</h3>
-            <p className="text-slate-500 mb-8 text-center max-w-sm font-medium">
-              Formatos suportados: .xlsx, .xls, .csv, .txt. As custódias e ATMs novas serão cadastradas automaticamente.
+            <h3 className={`${isModal ? 'text-lg' : 'text-xl'} font-bold text-slate-800 mb-2 text-center`}>Arraste e solte o arquivo ou clique no botão</h3>
+            <p className="text-slate-500 mb-8 text-center max-w-sm font-medium text-sm">
+              Formatos suportados: .xlsx, .xls, .csv, .txt.
             </p>
             <input 
               type="file" 
@@ -113,14 +116,14 @@ export const ImportData = () => {
             </button>
             
             {success && (
-              <div className="mt-8 bg-emerald-50 text-emerald-700 px-6 py-4 rounded-xl font-bold flex items-center border border-emerald-100 whitespace-pre-line text-left">
+              <div className="mt-8 bg-emerald-50 text-emerald-700 px-6 py-4 rounded-xl font-bold flex items-center border border-emerald-100 whitespace-pre-line text-left text-sm">
                 <CheckCircle className="w-6 h-6 mr-3 text-emerald-600 flex-shrink-0" />
                 {success}
               </div>
             )}
             
             {error && (
-              <div className="mt-8 bg-rose-50 text-rose-700 px-6 py-4 rounded-xl font-bold flex items-center border border-rose-100">
+              <div className="mt-8 bg-rose-50 text-rose-700 px-6 py-4 rounded-xl font-bold flex items-center border border-rose-100 text-sm">
                 <AlertCircle className="w-6 h-6 mr-3 text-rose-600" />
                 {error}
               </div>

@@ -20,8 +20,16 @@ async function getDetailData(custodyId, referenceDate) {
   const config = typeof analysis.configuracao === 'string' ? JSON.parse(analysis.configuracao) : analysis.configuracao;
   const { lines, dateRows, actionFinalMacro, actionFinalMicro } = config;
 
-  const atms = await db('tb_atms').where({ id_custodia: custodyId });
-  if (atms.length === 0) return { custody: await db('tb_custodias').where({ id: custodyId }).first(), referenceDate, atms: [], availableDates: [] };
+  const atmsQuery = db('tb_atms');
+  if (custodyId !== 'all') {
+    atmsQuery.where({ id_custodia: custodyId });
+  }
+  const atms = await atmsQuery;
+
+  if (atms.length === 0) {
+    const custody = custodyId === 'all' ? { id: 'all', nome: 'Custódia - Brasil (TODAS)' } : await db('tb_custodias').where({ id: custodyId }).first();
+    return { custody, referenceDate, atms: [], availableDates: [] };
+  }
 
   const allDates = Object.values(dateRows).flat().map(d => d.date).filter(Boolean);
   const uniqueDates = [...new Set(allDates)];
@@ -179,7 +187,7 @@ async function getDetailData(custodyId, referenceDate) {
     deposit: atm.microPredictionD * indexD,
   }));
 
-  const custody = await db('tb_custodias').where({ id: custodyId }).first();
+  const custody = custodyId === 'all' ? { id: 'all', nome: 'Custódia - Brasil (TODAS)' } : await db('tb_custodias').where({ id: custodyId }).first();
   return { 
     custody, referenceDate, 
     atms: finalAtms, 
@@ -343,8 +351,8 @@ router.post('/export/pdf', async (req, res) => {
   }
 
   try {
-    const custody = await db('tb_custodias').where({ id: custodyId }).first();
     const data = await getDetailData(custodyId, date);
+    const custody = data.custody;
     const atms = data.atms;
 
     const formatBRL = (val) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -379,7 +387,7 @@ router.post('/export/pdf', async (req, res) => {
     doc.text('ATM', 50, tableTop);
     doc.text('PREVISÃO SAQUE', 200, tableTop, { width: 100, align: 'right' });
     doc.text('PREVISÃO DEPÓSITO', 320, tableTop, { width: 100, align: 'right' });
-    doc.text('TOTAL ESTIMADO', 450, tableTop, { width: 100, align: 'right' });
+    doc.text('SALDO PREVISTO', 450, tableTop, { width: 100, align: 'right' });
     
     doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).strokeColor('#cbd5e1').stroke();
     
@@ -400,7 +408,7 @@ router.post('/export/pdf', async (req, res) => {
       doc.text(atm.name, 50, currentY);
       doc.text(`R$ ${formatBRL(atm.withdrawal)}`, 200, currentY, { width: 100, align: 'right' });
       doc.text(`R$ ${formatBRL(atm.deposit)}`, 320, currentY, { width: 100, align: 'right' });
-      doc.font('Helvetica-Bold').text(`R$ ${formatBRL(atm.withdrawal + atm.deposit)}`, 450, currentY, { width: 100, align: 'right' }).font('Helvetica');
+      doc.font('Helvetica-Bold').text(`R$ ${formatBRL(atm.withdrawal - atm.deposit)}`, 450, currentY, { width: 100, align: 'right' }).font('Helvetica');
       
       currentY += 20;
     });
@@ -445,7 +453,7 @@ router.post('/export/excel', async (req, res) => {
       'Total Real Depositado (R$)': atm.depositRaw,
       'Previsão de Saque (R$)': +atm.withdrawal.toFixed(2),
       'Previsão de Depósito (R$)': +atm.deposit.toFixed(2),
-      'Total Estimado (R$)': +(atm.withdrawal + atm.deposit).toFixed(2)
+      'Saldo Previsto (R$)': +(atm.withdrawal - atm.deposit).toFixed(2)
     }));
 
     // Totals row
@@ -461,7 +469,7 @@ router.post('/export/excel', async (req, res) => {
       'Total Real Depositado (R$)': totalRawD,
       'Previsão de Saque (R$)': +totalW.toFixed(2),
       'Previsão de Depósito (R$)': +totalD.toFixed(2),
-      'Total Estimado (R$)': +(totalW + totalD).toFixed(2)
+      'Saldo Previsto (R$)': +(totalW - totalD).toFixed(2)
     });
 
     const worksheet = xlsx.utils.json_to_sheet(sheetData);

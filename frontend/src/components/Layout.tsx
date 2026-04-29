@@ -7,7 +7,6 @@ import { Footer } from './Footer';
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Calculator, label: 'Análise de ATMs', path: '/analysis' },
-  { icon: FileUp, label: 'Importação', path: '/import', adminOnly: true },
   { icon: Users, label: 'Usuários', path: '/users', adminOnly: true },
   { icon: Settings, label: 'Custódias', path: '/custodies', adminOnly: true },
 ];

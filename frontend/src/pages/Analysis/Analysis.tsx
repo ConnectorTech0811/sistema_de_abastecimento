@@ -274,6 +274,13 @@ export const Analysis = () => {
     }));
   };
 
+  const handleDeleteDateRow = (dateRowId: number) => {
+    setDateRowsByRowId(prev => ({
+      ...prev,
+      [activeRowId]: (prev[activeRowId] || []).filter(r => r.id !== dateRowId)
+    }));
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       <div className="flex justify-between items-end">
@@ -295,6 +302,7 @@ export const Analysis = () => {
               onChange={(e) => setSelectedCustodyId(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all"
             >
+              <option value="all" className="text-primary-700 font-black">Custódia - Brasil (TODAS)</option>
               {custodies.map(c => (
                  <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -521,6 +529,7 @@ export const Analysis = () => {
                   <th className="px-5 py-3 text-[10px] font-black text-emerald-600 uppercase text-right">Depositado (R$)</th>
                   <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase text-center w-24">Fator D.</th>
                   <th className="px-5 py-3 text-[10px] font-black text-emerald-700 uppercase text-right">Total D. (R$)</th>
+                  <th className="px-5 py-3 text-[10px] font-black text-slate-400 uppercase text-center w-12">Excluir</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -574,6 +583,15 @@ export const Analysis = () => {
                     </td>
                     <td className="px-5 py-2 text-right text-xs font-black text-emerald-800">
                       {formatCurrency(parseCurrency(row.amountD) * parseCurrency(row.factorD))}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                       <button 
+                         onClick={() => handleDeleteDateRow(row.id)}
+                         className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                         title="Excluir Data"
+                       >
+                         <Trash2 className="w-3.5 h-3.5" />
+                       </button>
                     </td>
                   </tr>
                 ))}

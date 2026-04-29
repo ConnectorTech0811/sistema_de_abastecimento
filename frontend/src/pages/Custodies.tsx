@@ -1,6 +1,7 @@
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, FileUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
+import { ImportData } from './ImportData';
 
 type Custody = { id: string, name: string, region: string, cities: string, description: string, status: string };
 
@@ -28,7 +29,9 @@ export const Custodies = () => {
   }, []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [importCustody, setImportCustody] = useState<Custody | null>(null);
   
   const [formData, setFormData] = useState({ name: '', region: '', cities: '', description: '', status: 'Ativo' });
 
@@ -41,6 +44,11 @@ export const Custodies = () => {
       setFormData({ name: '', region: '', cities: '', description: '', status: 'Ativo' });
     }
     setIsModalOpen(true);
+  };
+
+  const openImportModal = (custody: Custody) => {
+    setImportCustody(custody);
+    setIsImportModalOpen(true);
   };
 
   const handleSave = async () => {
@@ -146,6 +154,25 @@ export const Custodies = () => {
         </div>
       )}
 
+      {isImportModalOpen && importCustody && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">Importação de Dados</h2>
+                  <p className="text-xs font-bold text-primary-600 uppercase mt-0.5">Vincular à: {importCustody.name}</p>
+                </div>
+                <button onClick={() => setIsImportModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+             </div>
+             <div className="p-6">
+                <ImportData custodyId={importCustody.id} isModal={true} />
+             </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -184,10 +211,13 @@ export const Custodies = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 flex items-center space-x-2">
-                    <button onClick={() => openModal(custody)} className="text-slate-500 hover:bg-primary-600 hover:text-white p-1.5 rounded-lg transition-colors" title="Editar">
+                    <button onClick={() => openImportModal(custody)} className="text-primary-600 hover:bg-primary-600 hover:text-white p-1.5 rounded-lg transition-colors border border-primary-100 hover:border-primary-600" title="Importar Dados">
+                      <FileUp className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => openModal(custody)} className="text-slate-500 hover:bg-slate-600 hover:text-white p-1.5 rounded-lg transition-colors border border-transparent" title="Editar">
                       <Edit2 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(custody.id)} className="text-slate-500 hover:bg-rose-600 hover:text-white p-1.5 rounded-lg transition-colors" title="Excluir">
+                    <button onClick={() => handleDelete(custody.id)} className="text-slate-500 hover:bg-rose-600 hover:text-white p-1.5 rounded-lg transition-colors border border-transparent" title="Excluir">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </td>

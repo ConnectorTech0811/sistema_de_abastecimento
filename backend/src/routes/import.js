@@ -45,7 +45,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       const atmMap = new Map();
       atmRows.forEach(a => atmMap.set(a.numero, a.id));
       
-      let defaultCustodyId = null;
+      let defaultCustodyId = req.body.custodyId; // Use provided custodyId if available
       let minDate = null;
       let maxDate = null;
       const transactionsToInsert = [];
@@ -175,19 +175,28 @@ router.post('/', upload.single('file'), async (req, res) => {
       let maxDate = null;
 
       await db.transaction(async trx => {
-        for (const row of data) {
-          if (!row.Custody || !row.ATM || !row.Date || !row.Type || !row.Amount) continue;
+        const providedCustodyId = req.body.custodyId;
 
-          let custody = await trx('tb_custodias').where({ nome: row.Custody }).first();
-          if (!custody) {
-            const [id] = await trx('tb_custodias').insert({ nome: row.Custody });
-            custody = { id, name: row.Custody };
+        for (const row of data) {
+          if (!row.Custody && !providedCustodyId) continue;
+          if (!row.ATM || !row.Date || !row.Type || !row.Amount) continue;
+
+          let custodyId = providedCustodyId;
+          
+          if (!custodyId) {
+            let custody = await trx('tb_custodias').where({ nome: row.Custody }).first();
+            if (!custody) {
+              const [id] = await trx('tb_custodias').insert({ nome: row.Custody });
+              custodyId = id;
+            } else {
+              custodyId = custody.id;
+            }
           }
 
           let atm = await trx('tb_atms').where({ numero: row.ATM.toString() }).first();
           if (!atm) {
-            const [id] = await trx('tb_atms').insert({ numero: row.ATM.toString(), id_custodia: custody.id });
-            atm = { id, number: row.ATM.toString(), custody_id: custody.id };
+            const [id] = await trx('tb_atms').insert({ numero: row.ATM.toString(), id_custodia: custodyId });
+            atm = { id, number: row.ATM.toString(), custody_id: custodyId };
           }
 
           let parsedDate = row.Date;

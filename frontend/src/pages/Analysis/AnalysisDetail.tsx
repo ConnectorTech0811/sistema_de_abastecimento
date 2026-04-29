@@ -281,7 +281,7 @@ export const AnalysisDetail = () => {
                   <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase text-right border-r border-slate-100">Valor Real Dep.</th>
                   <th className="px-6 py-4 text-[10px] font-black text-primary-600 uppercase text-right">Previsão Saque</th>
                   <th className="px-6 py-4 text-[10px] font-black text-emerald-600 uppercase text-right">Previsão Depósito</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-900 uppercase text-right">Total Estimado</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-slate-900 uppercase text-right">SALDO PREVISTO</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -311,7 +311,7 @@ export const AnalysisDetail = () => {
                       <span className="text-sm font-bold text-emerald-700">{formatCurrency(atm.deposit)}</span>
                     </td>
                     <td className="px-6 py-4 text-right bg-slate-50/30">
-                      <span className="text-sm font-black text-slate-900">{formatCurrency(atm.withdrawal + atm.deposit)}</span>
+                      <span className="text-sm font-black text-slate-900">{formatCurrency(atm.withdrawal - atm.deposit)}</span>
                     </td>
                   </tr>
                 ))}
@@ -323,7 +323,7 @@ export const AnalysisDetail = () => {
                   <td className="px-6 py-4 text-right text-xs font-bold text-slate-500 border-r border-slate-100">{formatCurrency(displayData.reduce((a, b) => a + b.rawD, 0))}</td>
                   <td className="px-6 py-4 text-right text-sm font-black text-primary-800">{formatCurrency(totalW)}</td>
                   <td className="px-6 py-4 text-right text-sm font-black text-emerald-700">{formatCurrency(totalD)}</td>
-                  <td className="px-6 py-4 text-right text-sm font-black text-slate-900">{formatCurrency(totalW + totalD)}</td>
+                  <td className="px-6 py-4 text-right text-sm font-black text-slate-900">{formatCurrency(totalW - totalD)}</td>
                 </tr>
               </tfoot>
             </table>

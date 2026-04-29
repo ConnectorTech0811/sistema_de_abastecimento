@@ -74,13 +74,18 @@ router.get('/:id/daily-totals', async (req, res) => {
   if (!date) return res.status(400).json({ error: 'A data é obrigatória' });
 
   try {
-    const totals = await db('tb_transacoes')
+    const totalsQuery = db('tb_transacoes')
       .join('tb_atms', 'tb_transacoes.id_atm', 'tb_atms.id')
-      .where('tb_atms.id_custodia', id)
       .where('tb_transacoes.data', date)
       .select('tb_transacoes.tipo')
       .sum('valor as total')
       .groupBy('tb_transacoes.tipo');
+
+    if (id !== 'all') {
+      totalsQuery.where('tb_atms.id_custodia', id);
+    }
+
+    const totals = await totalsQuery;
 
     const result = {
       withdrawal: 0,
@@ -108,7 +113,12 @@ router.get('/:id/atm-daily-totals', async (req, res) => {
   if (!date) return res.status(400).json({ error: 'A data é obrigatória' });
 
   try {
-    const atms = await db('tb_atms').where({ id_custodia: id });
+    let atms;
+    if (id === 'all') {
+      atms = await db('tb_atms');
+    } else {
+      atms = await db('tb_atms').where({ id_custodia: id });
+    }
 
     const results = [];
     for (const atm of atms) {
