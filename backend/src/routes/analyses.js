@@ -357,7 +357,7 @@ router.post('/export/pdf', async (req, res) => {
     // Header with better styling
     doc.rect(0, 0, 600, 80).fill('#0f172a');
     doc.fillColor('#ffffff').fontSize(20).font('Helvetica-Bold').text('CONSOLIDAÇÃO DE ABASTECIMENTO', 50, 25);
-    doc.fontSize(10).font('Helvetica').text(`CUSTÓDIA: ${custody ? custody.nome.toUpperCase() : custodyId}  |  DATA REF: ${date.split('-').reverse().join('/')}`, 50, 52);
+    doc.fontSize(10).font('Helvetica').text(`CUSTÓDIA: ${custody ? custody.nome.toUpperCase() : custodyId}  |  DATA DE PREVISÃO: ${date.split('-').reverse().join('/')}`, 50, 52);
     
     doc.fillColor('#000000').moveDown(4);
 

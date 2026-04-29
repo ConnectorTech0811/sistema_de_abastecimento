@@ -140,8 +140,12 @@ export const AnalysisDetail = () => {
         </div>
         <div className="flex items-center space-x-6">
           <div className="text-right">
-            <p className="text-sm font-bold text-slate-600 mb-1">{getDayOfWeek(refDate)}</p>
-            <p className="text-xs text-slate-400 uppercase tracking-tighter">Data de Referência</p>
+            <p className="text-sm font-bold text-slate-900 mb-1">
+              {new Date(refDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+            </p>
+            <p className="text-xs text-slate-500 uppercase tracking-tighter">
+              {getDayOfWeek(refDate)} • Data de Previsão
+            </p>
           </div>
           <div className="flex items-center space-x-3">
             <button
