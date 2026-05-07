@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Menu, X, LayoutDashboard, Calculator, FileUp, Users, Settings, LogOut, ChevronRight, Banknote } from 'lucide-react';
+import React, { useState } from 'react';
+import { Menu, X, LayoutDashboard, Calculator, FileUp, Users as UsersIcon, Settings as SettingsIcon, LogOut, ChevronRight, Banknote } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import logoConnector from '../assets/logo_connector.png';
 import { Footer } from './Footer';
@@ -7,8 +7,8 @@ import { Footer } from './Footer';
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Calculator, label: 'Análise de ATMs', path: '/analysis' },
-  { icon: Users, label: 'Usuários', path: '/users', adminOnly: true },
-  { icon: Settings, label: 'Custódias', path: '/custodies', adminOnly: true },
+  { icon: UsersIcon, label: 'Usuários', path: '/users', adminOnly: true },
+  { icon: SettingsIcon, label: 'Custódias', path: '/custodies', adminOnly: true },
 ];
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -16,7 +16,12 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  let user = null;
+  try {
+    user = userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('Erro ao ler dados do usuário');
+  }
   const isAdmin = user?.role === 'admin';
 
   const handleLogout = () => {
