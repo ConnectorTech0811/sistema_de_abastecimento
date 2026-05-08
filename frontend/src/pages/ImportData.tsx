@@ -180,7 +180,6 @@ export const ImportData = ({ custodyId, isModal = false }: { custodyId?: string,
   const allDone = hasFiles && fileResults.every(r => ['success', 'error', 'skipped'].includes(r.status));
   const pendingCount = fileResults.filter(r => r.status === 'pending').length;
   const alreadyCount = fileResults.filter(r => r.status === 'already_imported').length;
-  const willSkipCount = fileResults.filter(r => r.status === 'already_imported' && !r.forceImport).length;
 
   const statusIcon = (status: FileStatus) => {
     if (status === 'uploading') return <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />;

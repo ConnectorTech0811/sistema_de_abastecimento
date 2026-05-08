@@ -39,7 +39,7 @@ export const Login = () => {
         try {
           const data = await response.json();
           errorMsg = data.error || errorMsg;
-        } catch (e) {
+        } catch {
           errorMsg = `Erro ${response.status}: ${response.statusText}`;
         }
         throw new Error(errorMsg);

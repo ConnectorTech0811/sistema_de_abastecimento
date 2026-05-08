@@ -1,4 +1,4 @@
-import { ArrowLeft, Landmark, TrendingUp, TrendingDown, DownloadCloud, Loader2, Calendar } from 'lucide-react';
+import { ArrowLeft, Landmark, TrendingUp, DownloadCloud, Loader2, Calendar } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
@@ -167,7 +167,7 @@ export const AnalysisDetail = () => {
                   a.download = `consolidacao_${custodyId}_${refDate}.pdf`;
                   a.click();
                   URL.revokeObjectURL(url);
-                } catch (err) {
+                } catch {
                   alert('Erro ao exportar PDF');
                 }
               }}
@@ -195,7 +195,7 @@ export const AnalysisDetail = () => {
                   a.download = `consolidacao_${custodyId}_${refDate}.xlsx`;
                   a.click();
                   URL.revokeObjectURL(url);
-                } catch (err) {
+                } catch {
                   alert('Erro ao exportar Excel');
                 }
               }}

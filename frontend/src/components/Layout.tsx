@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, LayoutDashboard, Calculator, FileUp, Users as UsersIcon, Settings as SettingsIcon, LogOut, ChevronRight, Banknote } from 'lucide-react';
+import { Menu, X, LayoutDashboard, Calculator, Users as UsersIcon, Settings as SettingsIcon, LogOut, ChevronRight, Banknote } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import logoConnector from '../assets/logo_connector.png';
 import { Footer } from './Footer';
@@ -19,7 +19,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   let user = null;
   try {
     user = userStr ? JSON.parse(userStr) : null;
-  } catch (e) {
+  } catch {
     console.error('Erro ao ler dados do usuário');
   }
   const isAdmin = user?.role === 'admin';
