@@ -1,4 +1,4 @@
-import { Activity, Landmark, FileText, TrendingUp, DownloadCloud, Loader2 } from 'lucide-react';
+import { Activity, Landmark, FileText, TrendingUp, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { API_URL } from '../config';
 
@@ -56,10 +56,10 @@ export const Dashboard = () => {
           <h1 className="text-2xl font-bold text-slate-900">Dashboard Geral</h1>
           <p className="text-slate-500 mt-1">Visão panorâmica do sistema de abastecimento.</p>
         </div>
-        <button className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-md transition-colors font-medium">
+        {/* <button className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg shadow-md transition-colors font-medium">
           <DownloadCloud className="w-4 h-4 mr-2" />
           Exportar Relatório
-        </button>
+        </button> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -91,7 +91,7 @@ export const Dashboard = () => {
               <span className="text-xs font-bold text-slate-500 uppercase">Total Movimentado (R$)</span>
             </div>
           </div>
-          
+
           <div className="relative h-[300px] w-full mt-4">
             {/* Grid Lines */}
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-10">
@@ -112,7 +112,7 @@ export const Dashboard = () => {
                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
               </defs>
-              
+
               {data?.chartData && data.chartData.length > 0 && (
                 <>
                   {/* Area Fill */}
@@ -126,7 +126,7 @@ export const Dashboard = () => {
                     fill="url(#chartGradient)"
                     className="transition-all duration-1000 ease-in-out"
                   />
-                  
+
                   {/* The Main Line */}
                   <path
                     d={data.chartData.map((d: any, i: number) => {

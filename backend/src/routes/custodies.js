@@ -113,36 +113,34 @@ router.get('/:id/atm-daily-totals', async (req, res) => {
   if (!date) return res.status(400).json({ error: 'A data é obrigatória' });
 
   try {
-    let atms;
-    if (id === 'all') {
-      atms = await db('tb_atms');
-    } else {
-      atms = await db('tb_atms').where({ id_custodia: id });
-    }
+    const atmFilter = id === 'all'
+      ? db('tb_atms').select('id')
+      : db('tb_atms').where({ id_custodia: id }).select('id');
 
-    const results = [];
-    for (const atm of atms) {
-      const totals = await db('tb_transacoes')
-        .where({ id_atm: atm.id, data: date })
-        .select('tipo')
+    const [atms, transRows] = await Promise.all([
+      id === 'all' ? db('tb_atms') : db('tb_atms').where({ id_custodia: id }),
+      db('tb_transacoes')
+        .whereIn('id_atm', atmFilter)
+        .where('data', date)
+        .select('id_atm', 'tipo')
         .sum('valor as total')
-        .groupBy('tipo');
+        .groupBy('id_atm', 'tipo')
+    ]);
 
-      let withdrawal = 0;
-      let deposit = 0;
-      totals.forEach(t => {
-        if (t.tipo === 'saque') withdrawal = parseFloat(t.total);
-        if (t.tipo === 'deposito') deposit = parseFloat(t.total);
-      });
+    const transMap = {};
+    transRows.forEach(row => {
+      if (!transMap[row.id_atm]) transMap[row.id_atm] = { withdrawal: 0, deposit: 0 };
+      if (row.tipo === 'saque') transMap[row.id_atm].withdrawal = parseFloat(row.total) || 0;
+      if (row.tipo === 'deposito') transMap[row.id_atm].deposit = parseFloat(row.total) || 0;
+    });
 
-      results.push({
-        id: atm.id,
-        number: atm.numero,
-        name: `ATM ${atm.numero}`,
-        withdrawal,
-        deposit
-      });
-    }
+    const results = atms.map(atm => ({
+      id: atm.id,
+      number: atm.numero,
+      name: `ATM ${atm.numero}`,
+      withdrawal: transMap[atm.id]?.withdrawal || 0,
+      deposit: transMap[atm.id]?.deposit || 0
+    }));
 
     res.json(results);
   } catch (err) {

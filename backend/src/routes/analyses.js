@@ -38,7 +38,8 @@ async function getDetailData(custodyId, referenceDate) {
   if (uniqueDates.length > 0) {
     transactions = await db('tb_transacoes')
       .whereIn('id_atm', atms.map(a => a.id))
-      .whereIn('data', uniqueDates);
+      .whereIn('data', uniqueDates)
+      .select('id_atm', 'data', 'tipo', 'valor');
   }
 
   // 1. Pre-process transactions into lookup maps for O(1) access and correct summation
@@ -106,72 +107,70 @@ async function getDetailData(custodyId, referenceDate) {
   const macroTotalW = getFinalPrediction('W', false);
   const macroTotalD = getFinalPrediction('D', false);
 
-  const getAtmDetailedInfo = (atmId, type) => {
+  const applyAction = (values, action) => {
+    if (values.length === 0) return 0;
+    switch (action) {
+      case 'Maior': return Math.max(...values);
+      case 'Menor': return Math.min(...values);
+      case 'Média': return values.reduce((a, b) => a + b, 0) / values.length;
+      case 'Soma': return values.reduce((a, b) => a + b, 0);
+      default: return 0;
+    }
+  };
+
+  const getAtmDetailedData = (atmId) => {
     const dailyData = {};
     let activeLines = lines.filter(row => row.micro);
     if (activeLines.length === 0) activeLines = lines.filter(row => row.macro);
 
-    const rowValues = activeLines
-      .map(row => {
-        const rowDates = dateRows[row.id] || [];
-        const dailyValues = rowDates.map(rd => {
-          const raw = transMap[`${atmId}_${rd.date}_${type === 'W' ? 'saque' : 'deposito'}`] || 0;
-          const factor = parseFloat(String(type === 'W' ? rd.factorW : rd.factorD).replace(',', '.')) || 1;
-          const adjusted = raw * factor;
+    const rowValuesW = [];
+    const rowValuesD = [];
 
-          if (!dailyData[rd.date]) dailyData[rd.date] = { rawW: 0, adjW: 0, factorW: 1, rawD: 0, adjD: 0, factorD: 1 };
-          if (type === 'W') {
-            dailyData[rd.date].rawW = raw; dailyData[rd.date].adjW = adjusted; dailyData[rd.date].factorW = factor;
-          } else {
-            dailyData[rd.date].rawD = raw; dailyData[rd.date].adjD = adjusted; dailyData[rd.date].factorD = factor;
-          }
-          return adjusted;
-        });
+    activeLines.forEach(row => {
+      const rowDates = dateRows[row.id] || [];
+      const dailyW = [];
+      const dailyD = [];
 
-        if (dailyValues.length === 0) return 0;
-        switch (row.action) {
-          case 'Maior': return Math.max(...dailyValues);
-          case 'Menor': return Math.min(...dailyValues);
-          case 'Média': return dailyValues.reduce((a, b) => a + b, 0) / dailyValues.length;
-          case 'Soma': return dailyValues.reduce((a, b) => a + b, 0);
-          default: return 0;
-        }
+      rowDates.forEach(rd => {
+        const rawW = transMap[`${atmId}_${rd.date}_saque`] || 0;
+        const rawD = transMap[`${atmId}_${rd.date}_deposito`] || 0;
+        const factorW = parseFloat(String(rd.factorW).replace(',', '.')) || 1;
+        const factorD = parseFloat(String(rd.factorD).replace(',', '.')) || 1;
+
+        if (!dailyData[rd.date]) dailyData[rd.date] = { rawW: 0, adjW: 0, factorW: 1, rawD: 0, adjD: 0, factorD: 1 };
+        dailyData[rd.date].rawW = rawW;
+        dailyData[rd.date].adjW = rawW * factorW;
+        dailyData[rd.date].factorW = factorW;
+        dailyData[rd.date].rawD = rawD;
+        dailyData[rd.date].adjD = rawD * factorD;
+        dailyData[rd.date].factorD = factorD;
+
+        dailyW.push(rawW * factorW);
+        dailyD.push(rawD * factorD);
       });
 
-    let microPrediction = 0;
-    if (rowValues.length > 0) {
-      switch (actionFinalMicro) {
-        case 'Maior': microPrediction = Math.max(...rowValues); break;
-        case 'Menor': microPrediction = Math.min(...rowValues); break;
-        case 'Média': microPrediction = rowValues.reduce((a, b) => a + b, 0) / rowValues.length; break;
-        case 'Soma': microPrediction = rowValues.reduce((a, b) => a + b, 0); break;
-      }
-    }
-    return { dailyData, microPrediction };
+      rowValuesW.push(applyAction(dailyW, row.action));
+      rowValuesD.push(applyAction(dailyD, row.action));
+    });
+
+    return {
+      dailyData,
+      microPredictionW: applyAction(rowValuesW, actionFinalMicro),
+      microPredictionD: applyAction(rowValuesD, actionFinalMicro),
+    };
   };
 
   const atmResults = atms.map(atm => {
-    const infoW = getAtmDetailedInfo(atm.id, 'W');
-    const infoD = getAtmDetailedInfo(atm.id, 'D');
-    const dailyData = infoW.dailyData;
-    Object.keys(infoD.dailyData).forEach(date => {
-      if (!dailyData[date]) dailyData[date] = infoD.dailyData[date];
-      else {
-        dailyData[date].rawD = infoD.dailyData[date].rawD;
-        dailyData[date].adjD = infoD.dailyData[date].adjD;
-        dailyData[date].factorD = infoD.dailyData[date].factorD;
-      }
-    });
-
+    const info = getAtmDetailedData(atm.id);
     return {
       id: atm.id,
       number: atm.numero,
       name: `ATM ${atm.numero}`,
-      microPredictionW: infoW.microPrediction,
-      microPredictionD: infoD.microPrediction,
-      withdrawalRaw: Object.values(dailyData).reduce((a, b) => a + (b.rawW || 0), 0),
-      depositRaw: Object.values(dailyData).reduce((a, b) => a + (b.rawD || 0), 0),
-      dailyData
+      microPredictionW: info.microPredictionW,
+      microPredictionD: info.microPredictionD,
+      withdrawalRaw: Object.values(info.dailyData).reduce((a, b) => a + (b.rawW || 0), 0),
+      depositRaw: Object.values(info.dailyData).reduce((a, b) => a + (b.rawD || 0), 0),
+      dailyData: info.dailyData
     };
   });
 
@@ -315,33 +314,34 @@ router.post('/detail', async (req, res) => {
 
 // Helper: fetch per-ATM totals for a custody on a given date
 async function getAtmTotalsForDate(custodyId, date) {
-  const atms = await db('tb_atms').where({ id_custodia: custodyId });
-  const results = [];
+  const atmFilter = custodyId === 'all'
+    ? db('tb_atms').select('id')
+    : db('tb_atms').where({ id_custodia: custodyId }).select('id');
 
-  for (const atm of atms) {
-    const totals = await db('tb_transacoes')
-      .where({ id_atm: atm.id, data: date })
-      .select('tipo')
+  const [atms, transRows] = await Promise.all([
+    custodyId === 'all' ? db('tb_atms') : db('tb_atms').where({ id_custodia: custodyId }),
+    db('tb_transacoes')
+      .whereIn('id_atm', atmFilter)
+      .where('data', date)
+      .select('id_atm', 'tipo')
       .sum('valor as total')
-      .groupBy('tipo');
+      .groupBy('id_atm', 'tipo')
+  ]);
 
-    let withdrawal = 0;
-    let deposit = 0;
-    totals.forEach(t => {
-      if (t.tipo === 'saque') withdrawal = parseFloat(t.total) || 0;
-      if (t.tipo === 'deposito') deposit = parseFloat(t.total) || 0;
-    });
+  const transMap = {};
+  transRows.forEach(row => {
+    if (!transMap[row.id_atm]) transMap[row.id_atm] = { withdrawal: 0, deposit: 0 };
+    if (row.tipo === 'saque') transMap[row.id_atm].withdrawal = parseFloat(row.total) || 0;
+    if (row.tipo === 'deposito') transMap[row.id_atm].deposit = parseFloat(row.total) || 0;
+  });
 
-    results.push({
-      id: atm.id,
-      number: atm.numero,
-      name: `ATM ${atm.numero}`,
-      withdrawal,
-      deposit
-    });
-  }
-
-  return results;
+  return atms.map(atm => ({
+    id: atm.id,
+    number: atm.numero,
+    name: `ATM ${atm.numero}`,
+    withdrawal: transMap[atm.id]?.withdrawal || 0,
+    deposit: transMap[atm.id]?.deposit || 0
+  }));
 }
 
 router.post('/export/pdf', async (req, res) => {
