@@ -6,7 +6,8 @@ const db = require('../database');
 const authMiddleware = require('../middlewares/auth');
 
 const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+const os = require('os');
+const upload = multer({ dest: os.tmpdir() });
 
 router.use(authMiddleware);
 
